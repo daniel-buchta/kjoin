@@ -1,0 +1,15 @@
+# Store text files with LF in the repository regardless of the checkout platform.
+# Working copies still use the platform's native endings on checkout.
+* text=auto eol=lf
+
+# Binary files must never be normalised.
+*.jar binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.zip binary
+
+# Keep Maven wrapper scripts executable and unmangled.
+mvnw text eol=lf
+mvnw.cmd text eol=crlf
