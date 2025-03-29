@@ -4,29 +4,57 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>sk.softec</groupId>
-    <artifactId>kotlin-joins</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>io.github.daniel-buchta</groupId>
+    <artifactId>kjoin</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>KJoin</name>
+    <description>
+        SQL-style joins over in-memory Kotlin collections, with a type-safe DSL and optional
+        cardinality constraints.
+    </description>
+    <url>https://github.com/daniel-buchta/kjoin</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Daniel Buchta</name>
+            <email>daniel.buchta@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/daniel-buchta/kjoin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/daniel-buchta/kjoin.git</developerConnection>
+        <url>https://github.com/daniel-buchta/kjoin</url>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.jvmTarget>17</kotlin.compiler.jvmTarget>
-        <kotlin.compiler.apiVersion>1.9</kotlin.compiler.apiVersion>
-        <kotlin.compiler.languageVersion>1.9</kotlin.compiler.languageVersion>
+        <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
+        <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
 
-        <junit-jupiter.version>5.10.0</junit-jupiter.version>
-        <kotlin.version>1.9.23</kotlin.version>
-    </properties>
+        <kotlin.version>2.2.21</kotlin.version>
+        <junit-jupiter.version>6.0.3</junit-jupiter.version>
+        <kotest.version>6.1.4</kotest.version>
 
-    <repositories>
-        <repository>
-            <id>mavenCentral</id>
-            <url>https://repo1.maven.org/maven2/</url>
-        </repository>
-    </repositories>
+        <dokka.version>2.0.0</dokka.version>
+        <jacoco.version>0.8.13</jacoco.version>
+        <maven-surefire.version>3.5.5</maven-surefire.version>
+        <maven-source.version>3.4.0</maven-source.version>
+    </properties>
 
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
@@ -43,6 +71,13 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <args>
+                                <!-- Published API: every public declaration must state its
+                                     visibility and return type explicitly. -->
+                                <arg>-Xexplicit-api=strict</arg>
+                            </args>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -53,21 +88,45 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
+                <version>${maven-surefire.version}</version>
             </plugin>
+
+            <!-- Sources jar, required for publishing. -->
             <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.2</version>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
+
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <configuration>
-                    <mainClass>MainKt</mainClass>
-                </configuration>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -79,27 +138,15 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit-jupiter.version}</version>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit-jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>io.kotest</groupId>
             <artifactId>kotest-assertions-core-jvm</artifactId>
-            <version>5.8.1</version>
+            <version>${kotest.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -112,7 +159,47 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <profiles>
+        <!--
+            API-docs jar for publishing: mvn -Prelease verify
+
+            Kept out of the default build for two reasons: it adds ~20s to every build, and
+            dokka-maven-plugin 2.0.0 still uses the K1 descriptor analysis, which fails to parse
+            JDK 25 version strings ("Execution attach-javadocs ... failed: 25.0.2"). Run this
+            profile on JDK 17 or 21 until Dokka's Maven plugin moves to K2 analysis.
+        -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
+                        <version>${dokka.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>javadocJar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

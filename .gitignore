@@ -1,13 +1,14 @@
+### Maven ###
 target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
 ### IntelliJ IDEA ###
 .idea/
 *.iws
 *.iml
 *.ipr
+
+### Kotlin ###
+.kotlin/
 
 ### Eclipse ###
 .apt_generated
@@ -25,12 +26,18 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
 
-### Mac OS ###
+### OS ###
 .DS_Store
-/.idea/
+Thumbs.db
+desktop.ini
+
+### Misc ###
+out/
+*.log
+hs_err_pid*.log
+replay_pid*.log
+.env
