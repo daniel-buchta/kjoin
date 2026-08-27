@@ -1,53 +1,110 @@
 name: build
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-  workflow_dispatch:
+    push:
+        branches: [ main ]
+    pull_request:
+    workflow_dispatch:
+    release:
+        types: [ published ]
+
+permissions:
+    contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # 17 is the compilation target; 21 and 25 confirm forward compatibility.
-        java: [ '17', '21', '25' ]
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                # 17 is the compilation target; 21 and 25 confirm forward compatibility.
+                java: [ '17', '21', '25' ]
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v7
 
-      - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
-          cache: maven
+            - name: Set up JDK ${{ matrix.java }}
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: ${{ matrix.java }}
+                  cache: maven
 
-      - name: Build and test
-        run: mvn -B --no-transfer-progress verify
+            - name: Build and test
+              run: mvn -B --no-transfer-progress verify
 
-      - name: Upload coverage report
-        if: matrix.java == '17'
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
-          if-no-files-found: error
+            - name: Upload coverage report
+              if: matrix.java == '17'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: jacoco-report
+                  path: target/site/jacoco/
+                  if-no-files-found: error
 
-  api-docs:
-    # Dokka's Maven plugin still uses K1 descriptor analysis and cannot parse JDK 25 version
-    # strings, so the docs jar is built on an LTS JDK only.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    api-docs:
+        # Build Dokka docs on an LTS JDK.
+        runs-on: ubuntu-latest
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
+        steps:
+            - uses: actions/checkout@v7
 
-      - name: Build API docs jar
-        run: mvn -B --no-transfer-progress -Prelease verify -DskipTests
+            - name: Set up JDK 21
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: '21'
+                  cache: maven
+
+            - name: Build API docs jar
+              run: mvn -B --no-transfer-progress -Prelease -DskipTests clean package
+
+    publish:
+        if: github.event_name == 'release' && github.event.action == 'published'
+        needs:
+            - build
+            - api-docs
+
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Set up JDK 21
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: '21'
+                  cache: maven
+                  server-id: central
+                  server-username-env-var: MAVEN_CENTRAL_USERNAME
+                  server-password-env-var: MAVEN_CENTRAL_PASSWORD
+
+            - name: Verify release version
+              shell: bash
+              run: |
+                  VERSION=$(mvn help:evaluate \
+                    -Dexpression=project.version \
+                    -q \
+                    -DforceStdout)
+                  
+                  TAG_VERSION="${GITHUB_REF_NAME#v}"
+                  
+                  echo "POM version: $VERSION"
+                  echo "Git tag:     $GITHUB_REF_NAME"
+                  
+                  if [ "$VERSION" != "$TAG_VERSION" ]; then
+                    echo "Release tag version does not match pom.xml version."
+                    exit 1
+                  fi
+
+            - name: Publish to Maven Central
+              run: >
+                  mvn -B --no-transfer-progress
+                  -Prelease
+                  -Dgpg.signer=bc
+                  clean deploy
+              env:
+                  MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+                  MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+                  MAVEN_GPG_KEY: ${{ secrets.MAVEN_GPG_KEY }}
+                  MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}

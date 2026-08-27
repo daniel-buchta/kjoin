@@ -18,7 +18,7 @@ kinds, and a declared cardinality that fails loudly when the data does not match
 <dependency>
     <groupId>io.github.daniel-buchta</groupId>
     <artifactId>kjoin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
