@@ -1,7 +1,6 @@
 ﻿package io.github.danielbuchta.kjoin.dsl
 
-import io.github.danielbuchta.kjoin.core.JoinPlan
-import io.github.danielbuchta.kjoin.core.transposedLeftJoin
+import io.github.danielbuchta.kjoin.core.Joins
 import io.github.danielbuchta.kjoin.core.MatchedPair
 
 public object RightJoinDsl {
@@ -26,12 +25,8 @@ public sealed class RightJoin<Base : Any, Left : Base, Right : Base> :
         public val right: List<Right>,
         public val key: Base.() -> Key
     ) : RightJoin<Base, Left, Right>() {
-        override fun execute(context: JoinContextData): List<Pair<Left?, Right>> {
-            val plan = JoinPlan.byKeyTransposed<Base, Left, Right, Key>(left, right, key)
-            // The plan is transposed, so its right side holds this join's left rows.
-            context.constraints.validate(plan.rightMatchCounts(), plan.leftMatchCounts())
-            return plan.transposedLeftJoin()
-        }
+        override fun execute(context: JoinContextData): List<Pair<Left?, Right>> =
+            Joins.rightJoinUsingKey(left, right, context.constraints, key)
     }
 
     public class ByPredicate<Base : Any, Left : Base, Right : Base>(
@@ -39,11 +34,7 @@ public sealed class RightJoin<Base : Any, Left : Base, Right : Base> :
         public val right: List<Right>,
         public val predicate: MatchedPair<Left, Right>.() -> Boolean
     ) : RightJoin<Base, Left, Right>() {
-        override fun execute(context: JoinContextData): List<Pair<Left?, Right>> {
-            val plan = JoinPlan.byPredicateTransposed(left, right, predicate)
-            // The plan is transposed, so its right side holds this join's left rows.
-            context.constraints.validate(plan.rightMatchCounts(), plan.leftMatchCounts())
-            return plan.transposedLeftJoin()
-        }
+        override fun execute(context: JoinContextData): List<Pair<Left?, Right>> =
+            Joins.rightJoinOnCondition(left, right, context.constraints, predicate)
     }
 }

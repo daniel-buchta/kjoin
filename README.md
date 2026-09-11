@@ -4,8 +4,8 @@ SQL-style joins over in-memory Kotlin collections, with a type-safe DSL and opti
 constraints.
 
 ```kotlin
-Kjoin { employees leftJoin departments using { departmentId } }
-// List<Pair<Employee, Department?>>
+Kjoin { employees leftJoin departments using { departmentId } }  // List<Pair<Employee, Department?>>
+Kjoin { employees fullJoin departments on { left.departmentId == right.departmentId } }  // List<Pair<Employee?, Department?>>
 ```
 
 The point of the library is not the join itself — `groupBy` plus `flatMap` gets you there — but the
@@ -18,7 +18,7 @@ kinds, and a declared cardinality that fails loudly when the data does not match
 <dependency>
     <groupId>io.github.daniel-buchta</groupId>
     <artifactId>kjoin</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -26,7 +26,7 @@ Requires Kotlin 2.2+ and JVM 17+.
 
 ## The four joins
 
-Both sides must share a supertype that exposes the join key:
+When both sides share a supertype that exposes the join key, `using` can be used. Otherwise, use `on`:
 
 ```kotlin
 interface Staffed { val departmentId: String }
@@ -102,7 +102,7 @@ Kjoin(constraints = ONE_TO_MANY) { departments innerJoin employees using { depar
 Available cardinalities: `ZERO_OR_MORE` (`0..*`), `ZERO_OR_ONE` (`0..1`), `ONE` (`1`),
 `ONE_OR_MORE` (`1..*`), plus the Kotlin-only shorthands `` `0-N` ``, `` `0-1` ``, `` `1` ``,
 `` `1-N` ``. Named pairs are also provided: `ONE_TO_ONE`, `ONE_TO_MANY`, `MANY_TO_ONE`,
-`MANY_TO_MANY`.
+`MANY_TO_MANY`, and `UNCONSTRAINED` for `0..*` on both sides.
 
 The default is `0..*` on both sides, which validates nothing.
 
@@ -140,7 +140,19 @@ Joins.leftJoinUsingKey(employees, departments) { departmentId }
 Joins.leftJoinOnCondition(employees, departments) { left.departmentId == right.departmentId }
 ```
 
-These do not validate cardinality — that is a DSL-level concern.
+Constraints are supported here too, as an optional third argument before the lambda:
+
+```kotlin
+import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints
+import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints.Companion.MANY_TO_ONE
+
+// every employee has exactly one department, every department at least one employee
+Joins.leftJoinUsingKey(employees, departments, MANY_TO_ONE) { departmentId }
+Joins.leftJoinUsingKey(employees, departments, CardinalityConstraints(ONE_OR_MORE, ONE)) { departmentId }
+```
+
+The default is `UNCONSTRAINED`, so omitting the argument validates nothing. The `left to right` pair
+shorthand is DSL-only — pass a `CardinalityConstraints` value or one of its named constants here.
 
 ## Kotlin only
 

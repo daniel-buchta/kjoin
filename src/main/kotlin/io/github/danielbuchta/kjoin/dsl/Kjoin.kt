@@ -1,8 +1,8 @@
 ﻿package io.github.danielbuchta.kjoin.dsl
 
 import io.github.danielbuchta.kjoin.cardinality.Cardinality
-import io.github.danielbuchta.kjoin.cardinality.Cardinality.Companion.ZERO_OR_MORE
 import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints
+import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints.Companion.UNCONSTRAINED
 import io.github.danielbuchta.kjoin.core.MatchedPair
 
 /**
@@ -18,7 +18,7 @@ import io.github.danielbuchta.kjoin.core.MatchedPair
 public object Kjoin {
 
     public operator fun <Left, Right, Result> invoke(
-        constraints: CardinalityConstraints = CardinalityConstraints(ZERO_OR_MORE, ZERO_OR_MORE),
+        constraints: CardinalityConstraints = UNCONSTRAINED,
         join: JoinContext.() -> JoinSpec<Left, Right, Result>
     ): List<Result> = with(JoinContextData(constraints)) {
         join().execute(this)

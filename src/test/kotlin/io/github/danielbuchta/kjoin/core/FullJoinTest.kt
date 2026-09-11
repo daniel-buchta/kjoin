@@ -19,7 +19,7 @@ internal class FullJoinTest {
     @MethodSource("io.github.danielbuchta.kjoin.test.JoinCasesKt#joinCases")
     fun `full join keeps every row from both sides`(case: JoinCase) {
         withClue("using key") {
-            Joins.fullJoinUsingKey(case.left, case.right, Row::key) shouldBe case.full
+            Joins.fullJoinUsingKey(case.left, case.right, key = Row::key) shouldBe case.full
         }
         withClue("on condition") {
             Joins.fullJoinOnCondition(case.left, case.right) { left.key == right.key } shouldBe case.full
@@ -115,7 +115,7 @@ internal class FullJoinTest {
             val expected = sampleRight.map<RightRow, Pair<LeftRow?, RightRow?>> { null to it }
 
             withClue("using key") {
-                Joins.fullJoinUsingKey(emptyList<LeftRow>(), sampleRight, Row::key) shouldBe expected
+                Joins.fullJoinUsingKey(emptyList<LeftRow>(), sampleRight, key = Row::key) shouldBe expected
             }
             withClue("on condition") {
                 Joins.fullJoinOnCondition(emptyList<LeftRow>(), sampleRight) {
@@ -129,7 +129,7 @@ internal class FullJoinTest {
             val expected = sampleLeft.map<LeftRow, Pair<LeftRow?, RightRow?>> { it to null }
 
             withClue("using key") {
-                Joins.fullJoinUsingKey(sampleLeft, emptyList<RightRow>(), Row::key) shouldBe expected
+                Joins.fullJoinUsingKey(sampleLeft, emptyList<RightRow>(), key = Row::key) shouldBe expected
             }
             withClue("on condition") {
                 Joins.fullJoinOnCondition(sampleLeft, emptyList<RightRow>()) {

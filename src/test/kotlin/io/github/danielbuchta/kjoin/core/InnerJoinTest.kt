@@ -17,7 +17,7 @@ internal class InnerJoinTest {
     @MethodSource("io.github.danielbuchta.kjoin.test.JoinCasesKt#joinCases")
     fun `inner join returns only matched rows`(case: JoinCase) {
         withClue("using key") {
-            Joins.innerJoinUsingKey(case.left, case.right, Row::key) shouldBe case.inner
+            Joins.innerJoinUsingKey(case.left, case.right, key = Row::key) shouldBe case.inner
         }
         withClue("on condition") {
             Joins.innerJoinOnCondition(case.left, case.right) { left.key == right.key } shouldBe case.inner

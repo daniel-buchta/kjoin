@@ -38,7 +38,9 @@ cardinality constraints. Three layers, each in its own package.
   and one sealed spec per join kind, each with a `ByKey` and a `ByPredicate` variant.
 - `JoinDsl.kt` — the `@DslMarker` annotation.
 
-A spec's `execute` builds a `JoinPlan`, validates the cardinality against it, then runs the join.
+A spec's `execute` is a one-line delegation to the matching `Joins` function, passing the context's
+constraints through. The DSL adds the fluent syntax and the constraint defaults; it holds no join
+logic of its own.
 
 Usage: `Kjoin { left innerJoin right using { key } }` or `... on { left.k == right.k }`.
 
@@ -52,7 +54,10 @@ Usage: `Kjoin { left innerJoin right using { key } }` or `... on { left.k == rig
 - `InnerJoin.kt`, `LeftJoin.kt`, `RightJoin.kt`, `FullJoin.kt` — one extension function each,
   turning a plan into a result. Right joins use a *transposed* plan (`byKeyTransposed` /
   `byPredicateTransposed`) plus `transposedLeftJoin`.
-- `Joins.kt` — the public non-DSL entry point. Does not validate cardinality.
+- `Joins.kt` — the public non-DSL entry point, and the single implementation of every join: build a
+  plan, validate it, run the join. Each function takes optional `CardinalityConstraints`, defaulting
+  to `UNCONSTRAINED`. The private `validated` / `validatedTransposed` helpers are the only place the
+  constraint orientation is decided. The `left to right` pair shorthand is DSL-only.
 - `MatchedPair.kt` — the receiver handed to `on { }` predicates.
 - `AssociateMany.kt` — pairing helpers; `associateManyOrNull` supplies the outer-join `null`.
 
@@ -70,7 +75,9 @@ Usage: `Kjoin { left innerJoin right using { key } }` or `... on { left.k == rig
   match; `right` bounds how many right rows each left row may match. A side of `0..*` is skipped.
 - **Right joins are transposed left joins.** When wiring a right join, the plan's sides are swapped,
   so the two count arguments passed to `validate` must be swapped too. This is the easiest thing to
-  get wrong in this codebase.
+  get wrong in this codebase; it now lives only in `Joins.kt`'s `validatedTransposed`, and
+  `JoinsCardinalityTest.constraints keep their orientation in every join` is what catches a swap —
+  the DSL tests do not.
 - **`Base` is only meaningful for `using`.** It exists so the key can be read through a common
   supertype. Predicate-based signatures deliberately do not declare it — it would be inferred as
   `Any` and guarantee nothing.

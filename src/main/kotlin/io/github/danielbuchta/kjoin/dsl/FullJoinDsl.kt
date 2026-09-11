@@ -1,7 +1,6 @@
 ﻿package io.github.danielbuchta.kjoin.dsl
 
-import io.github.danielbuchta.kjoin.core.JoinPlan
-import io.github.danielbuchta.kjoin.core.fullJoin
+import io.github.danielbuchta.kjoin.core.Joins
 import io.github.danielbuchta.kjoin.core.MatchedPair
 
 
@@ -30,11 +29,8 @@ public sealed class FullJoin<Base : Any, Left : Base, Right : Base> :
         public val right: List<Right>,
         public val key: Base.() -> Key
     ) : FullJoin<Base, Left, Right>() {
-        override fun execute(context: JoinContextData): List<Pair<Left?, Right?>> {
-            val plan = JoinPlan.byKey<Base, Left, Right, Key>(left, right, key)
-            context.constraints.validate(plan.leftMatchCounts(), plan.rightMatchCounts())
-            return plan.fullJoin()
-        }
+        override fun execute(context: JoinContextData): List<Pair<Left?, Right?>> =
+            Joins.fullJoinUsingKey(left, right, context.constraints, key)
     }
 
     public class ByPredicate<Base : Any, Left : Base, Right : Base>(
@@ -42,10 +38,7 @@ public sealed class FullJoin<Base : Any, Left : Base, Right : Base> :
         public val right: List<Right>,
         public val predicate: MatchedPair<Left, Right>.() -> Boolean
     ) : FullJoin<Base, Left, Right>() {
-        override fun execute(context: JoinContextData): List<Pair<Left?, Right?>> {
-            val plan = JoinPlan.byPredicate(left, right, predicate)
-            context.constraints.validate(plan.leftMatchCounts(), plan.rightMatchCounts())
-            return plan.fullJoin()
-        }
+        override fun execute(context: JoinContextData): List<Pair<Left?, Right?>> =
+            Joins.fullJoinOnCondition(left, right, context.constraints, predicate)
     }
 }

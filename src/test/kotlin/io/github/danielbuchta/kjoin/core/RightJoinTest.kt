@@ -17,7 +17,7 @@ internal class RightJoinTest {
     @MethodSource("io.github.danielbuchta.kjoin.test.JoinCasesKt#joinCases")
     fun `right join keeps every right row`(case: JoinCase) {
         withClue("using key") {
-            Joins.rightJoinUsingKey(case.left, case.right, Row::key) shouldBe case.rightOuter
+            Joins.rightJoinUsingKey(case.left, case.right, key = Row::key) shouldBe case.rightOuter
         }
         withClue("on condition") {
             Joins.rightJoinOnCondition(case.left, case.right) { left.key == right.key } shouldBe case.rightOuter

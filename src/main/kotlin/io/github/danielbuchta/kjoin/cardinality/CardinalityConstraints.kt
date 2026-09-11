@@ -35,6 +35,12 @@ public data class CardinalityConstraints(
 
     public companion object {
         /**
+         * 0..* to 0..* - validates nothing.
+         */
+        public val UNCONSTRAINED: CardinalityConstraints =
+            CardinalityConstraints(Cardinality.ZERO_OR_MORE, Cardinality.ZERO_OR_MORE)
+
+        /**
          * 1 to 1
          */
         public val ONE_TO_ONE: CardinalityConstraints =

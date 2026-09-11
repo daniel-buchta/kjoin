@@ -5,8 +5,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.Test
 import io.github.danielbuchta.kjoin.cardinality.Cardinality.Companion.ONE
+import io.github.danielbuchta.kjoin.cardinality.Cardinality.Companion.ONE_OR_MORE
 import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraintViolationException
+import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints
+import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints.Companion.MANY_TO_ONE
 import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints.Companion.ONE_TO_MANY
+import io.github.danielbuchta.kjoin.cardinality.CardinalityConstraints.Companion.ONE_TO_ONE
 import io.github.danielbuchta.kjoin.cardinality.JoinSide
 import io.github.danielbuchta.kjoin.core.Joins
 import io.github.danielbuchta.kjoin.dsl.Kjoin
@@ -38,6 +42,12 @@ internal class ReadmeExampleTest {
         Department("Engineering", "eng"),
         Department("Operations", "ops"),
     )
+
+    @Test
+    fun `introductory examples`() {
+        Kjoin { employees leftJoin departments using { departmentId } }.size shouldBe 3
+        Kjoin { employees fullJoin departments on { left.departmentId == right.departmentId } }.size shouldBe 3
+    }
 
     @Test
     fun `the four joins`() {
@@ -100,5 +110,23 @@ internal class ReadmeExampleTest {
         }
 
         byKey shouldBe byPredicate
+    }
+
+    @Test
+    fun `without the dsl, with constraints`() {
+        val viaConstant = Joins.leftJoinUsingKey(employees, departments, MANY_TO_ONE) { departmentId }
+        val viaConstructor = Joins.leftJoinUsingKey(
+            employees,
+            departments,
+            CardinalityConstraints(ONE_OR_MORE, ONE),
+        ) { departmentId }
+
+        viaConstant.size shouldBe 3
+        viaConstructor shouldBe viaConstant
+
+        // two employees share "eng", so ONE on the left cannot hold
+        shouldThrowExactly<CardinalityConstraintViolationException> {
+            Joins.leftJoinUsingKey(employees, departments, ONE_TO_ONE) { departmentId }
+        }
     }
 }
