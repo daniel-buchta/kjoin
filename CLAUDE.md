@@ -24,6 +24,21 @@ mvn -Prelease verify
 `-Xexplicit-api=strict` is on for main sources: every public declaration needs an explicit
 visibility and return type, or the build fails.
 
+## Changelog
+
+Any change under `src/main/kotlin/**` gets a `CHANGELOG.md` entry in the same change, not a follow-up.
+
+- **Where.** A bullet under `## Unreleased`, in the matching Keep a Changelog category — `Added`, `Changed`,
+  `Deprecated`, `Removed`, `Fixed`, `Security`. Add the `### Category` heading if it is not there yet, and
+  keep the categories in that order. Never edit a released version's section.
+- **Voice.** One bullet describing the user-visible effect, not the implementation:
+  `Add cardinality constraints to non-DSL join API.` A second sentence is fine when the change carries a
+  guarantee worth stating, as the 1.0.0 entry does.
+- **When to skip.** Test-only changes, doc-only changes (`README.md`, `CLAUDE.md`) and build/CI changes
+  (`pom.xml`, `.github/workflows/**`) need no entry.
+- **Release flow.** At release, `## Unreleased` is renamed to `## [x.y.z] - YYYY-MM-DD` and a fresh empty
+  `## Unreleased` goes back on top. The version bump itself is not a changelog entry.
+
 ## Project Architecture
 
 A Kotlin library for SQL-style joins on in-memory collections, with a type-safe DSL and optional
